@@ -1,5 +1,5 @@
 Insertion encoder/decoder shellcode
-For this solution I decided to incorporate the homework and the assignment and put two random characters between two legitimate shellcode values.
+For this one I decided to put two random characters between two legitimate shellcode values.
 Key:
 Legit = Legitimate piece of shellcode
 Random = Bogus character placed to evade IDS.
